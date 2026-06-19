@@ -21,7 +21,7 @@ void insert_at_beginning(int element)
 {
     struct SLL *NewNode = create_node(element);
 
-    if (first == NULL)
+    if (!first)
     {
         first = last = NewNode;
     }
@@ -36,7 +36,7 @@ void insert_at_end(int element)
 {
     struct SLL *NewNode = create_node(element);
 
-    if (first == NULL)
+    if (!first)
     {
         insert_at_beginning(element);
     }
@@ -73,11 +73,11 @@ void insert_at_pos(int pos, int element)
 
 void delete_from_beginning()
 {
-    if (first == NULL)
+    if (!first)
     {
         printf("SLL is empty");
     }
-    else if (first->next == NULL)
+    else if (!first->next)
     {
         first = last = NULL;
     }
@@ -90,11 +90,11 @@ void delete_from_beginning()
 void delete_from_end()
 {
     struct SLL *temp = first;
-    if (first == NULL)
+    if (!first)
     {
         printf("SLL is empty");
     }
-    else if (first->next == NULL)
+    else if (!first->next)
     {
         first = last = NULL;
     }
@@ -122,11 +122,13 @@ void delete_from_pos(int pos)
         {
             temp = temp->next;
         }
+        struct SLL *tempp = temp->next;
+        tempp= tempp->next;
         if (temp->next == NULL)
         {
             delete_from_end();
         }
-        temp->next = NULL;
+        temp->next = tempp;
     }
 }
 
@@ -189,13 +191,16 @@ int main()
     insert_at_pos(2, 500);
     traversal();
 
-    delete_from_beginning();
-    traversal();
+    // delete_from_beginning();
+    // traversal();
 
-    delete_from_end();
-    traversal();
+    // delete_from_end();
+    // traversal();
 
-    delete_from_pos(1);
+    // delete_from_pos(1);
+    // traversal();
+
+    delete_from_pos(3);
     traversal();
 
     search(200);
