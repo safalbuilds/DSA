@@ -1,12 +1,15 @@
 #include <iostream>
-#include "merge.cpp"
-#include "quick.cpp"
 #include <functional>
 #include <vector>
 #include <chrono>
 #include <fstream>
+#include "merge.cpp"
+#include "quick.cpp"
+#include "heap.cpp"
+#include "shell.cpp"
+#include "radix.cpp"
 
-#define MAX 100000
+#define MAX 10000
 
 void generate_csv(
     const std::string &file,
@@ -15,7 +18,7 @@ void generate_csv(
     std::vector<int> arr;
     std::vector<int> numbers;
     std::vector<int> timee;
-    for (int i = 1000; i <= MAX; i += 100)
+    for (int i = 1; i <= MAX; i += 100)
     {
         std::vector<int> arr = {};
         for (int j = 0; j < i; j++)
@@ -45,4 +48,7 @@ void generate_csv(
 int main(){
     generate_csv("data/merge.csv", mergeSort);
     generate_csv("data/quick.csv", quickSort);
+    generate_csv("data/heap.csv", heapSort);
+    generate_csv("data/shell.csv", shellSort);
+    generate_csv("data/radix.csv", radixSort);
 }
