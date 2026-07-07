@@ -3,67 +3,11 @@
 #include <vector>
 #include <fstream>
 #include <functional>
+#include "bubble.cpp"
+#include "insert.cpp"
+#include "select.cpp"
 
 #define MAX 10000
-
-void display(std::vector<int> A)
-{
-    for (int i = 0; i < A.size(); i++)
-    {
-        std::cout << A[i] << " ";
-    }
-    std::cout << "\n";
-}
-
-std::vector<int> Bubblee(std::vector<int> A)
-{
-    for (int i = 0; i < A.size() - 1; i++)
-    {
-        for (int j = 0; j < A.size() - i - 1; j++)
-        {
-            if (A[j] > A[j + 1])
-            {
-                std::swap(A[j], A[j + 1]);
-            }
-        }
-    }
-    return A;
-}
-
-std::vector<int> Insertion(std::vector<int> A)
-{
-    for (int i = 1; i < A.size(); i++)
-    {
-        int key = A[i];
-        int j = i - 1;
-
-        while (j >= 0 && A[j] > key)
-        {
-            A[j + 1] = A[j];
-            j--;
-        }
-        A[j + 1] = key;
-    }
-    return A;
-}
-
-std::vector<int> Selection(std::vector<int> A)
-{
-    int n = A.size();
-    for (int i = 0; i < n - 1; i++)
-    {
-        int pos = i;
-        for (int j = i + 1; j < n; j++)
-        {
-            if (A[j] < A[pos])
-            {
-                pos = j;
-            }
-        }
-        std::swap(A[i], A[pos]);
-    }
-    return A;
-}
 
 void generate_csv(
     const std::string &file,
@@ -72,7 +16,7 @@ void generate_csv(
 
     std::vector<int> numbers;
     std::vector<long long> timee;
-    for (int i = 1000; i <= MAX; i += 100)
+    for (int i = 1; i <= MAX; i += 100)
     {
         std::vector<int> arr = {};
         for (int j = 0; j < i; j++)
@@ -96,27 +40,25 @@ void generate_csv(
     std::cout << file << " written completed" << std::endl;
 }
 
-void generate_all()
-{
-    generate_csv("bubble.csv", Bubblee);
-    generate_csv("insertion.csv", Insertion);
-    generate_csv("selection.csv", Selection);
-}
-
 int main()
 {
-    std::vector<int> arr;
-    for (int i = 0; i <= 30; i++)
-    {
-        arr.push_back(random() % 30);
-        std::cout << i << std::endl;
-    }
-    display(arr);
-    auto start = std::chrono::steady_clock::now();
-    auto sorted = Selection(arr);
-    auto end = std::chrono::steady_clock::now();
-    std::cout << "Sorted on " << end - start << std::endl;;
-    display(sorted);
+    generate_csv("data/bubble.csv", Bubblee);
+    generate_csv("data/insertion.csv", Insertion);
+    generate_csv("data/selection.csv", Selection);
 }
+
+// int main()
+// {
+//     std::vector<int> arr;
+//     for (int i = 0; i <= 30; i++)
+//     {
+//         arr.push_back(random() % 30);
+//         std::cout << i << std::endl;
+//     }
+//     auto start = std::chrono::steady_clock::now();
+//     auto sorted = Selection(arr);
+//     auto end = std::chrono::steady_clock::now();
+//     std::cout << "Sorted on " << end - start << std::endl;;
+// }
 
 // bubble, insertion, selection

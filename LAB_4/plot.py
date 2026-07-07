@@ -1,24 +1,24 @@
 import matplotlib.pyplot as plt
 import csv
 
-def plott(filename):
+def plott(filepath):
     x = []
     y = []
-
-    with open (filename) as file:
+    func_name = filepath.replace("data/", "").replace(".csv", "").capitalize()
+    with open (filepath) as file:
         reader = csv.reader(file)
         next(reader)
         for row in reader:
             x.append(int(row[0]))
             y.append(int(row[1]))
     
-    plt.plot(x,y, label=filename.replace(".csv", ""))
-    print(f"{filename} plotted successfully.")
+    plt.plot(x,y, label=func_name)
+    print(f"{func_name} plotted successfully.")
 
 def main():
-    plott("bubble.csv")
-    plott("insertion.csv")
-    plott("selection.csv")
+    plott("data/bubble.csv")
+    plott("data/insertion.csv")
+    plott("data/selection.csv")
 
     plt.xlabel("No of elements")
     plt.ylabel("Time")
