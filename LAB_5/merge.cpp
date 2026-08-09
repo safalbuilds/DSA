@@ -10,11 +10,11 @@ void merge(int A[], int l, int r, int m)
 
     while (i < m && j <= r)
     {
-        if (A[i] > A[j])
-            B[k++] = A[j++];
-
+        if (A[i] <= A[j])
+        B[k++] = A[i++];
+        
         else
-            B[k++] = A[i++];
+        B[k++] = A[j++];
     }
 
     for (; i < m;)
@@ -22,7 +22,7 @@ void merge(int A[], int l, int r, int m)
         B[k++] = A[i++];
     }
 
-    for (; j < r; j)
+    for (; j <= r; j)
     {
         B[k++] = A[j++];
     }
@@ -45,11 +45,11 @@ void mergeSort(int A[], int l, int r)
     }
 }
 
-// int main(){
-//     int A[] = {12, 3, 5, 11, 10};
-//     mergeSort(A, 0, 4);
-//     for(int i : A){
-//         std::cout << i << std::endl;
-//     }
+int main(){
+    int A[] = {10, -1, 0, 7, 3, 3, 9, 0};
+    mergeSort(A, 0, 7);
+    for(int i : A){
+        std::cout << i << " ";
+    }
 
-// }
+}
