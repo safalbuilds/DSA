@@ -1,11 +1,12 @@
 
 inf = float('inf')
 G = {
-    'A': {'B':2, 'C':6, 'D':4},
-    'B': {'A':2, 'C':6},
-    'C': {'A':6, 'B':5, 'D':7, 'E':3},
-    'D': {'A':4, 'C':7, 'E':8},
-    'E': {'C':3, 'D':8}
+    'A': {'S':1, 'M':2},
+    'M': {'A':2, 'S':3, 'U':1, 'Z':1},
+    'S': {'M':3, 'U':7, 'A':1},
+    'U': {'S':7, 'M':1, 'Z':3, 'W': 1},
+    'Z': {'M':1, 'U':3, 'W':4},
+    'W': {'U':1, 'Z':4}
 }
 
 def initialize(G, start):
@@ -19,13 +20,44 @@ def initialize(G, start):
     cost[start] = 0
     return cost, prev
 
+def relax(u, v, G, cost, prev):
+    if cost[v] > cost[u] + G[u][v]:
+        cost[v] = cost[u] + G[u][v]
+        prev[v] = u
+    return cost, prev
+
 def djikstra(G, start):
     cost, prev = initialize(G, start)
-    vertices = [i for i in G.keys()]
-    visited = []
-    print(vertices)
+    visited = set()
+    PQ = {}
+    for _ in G.keys():
+        PQ[_] = cost[_]
 
-    while len(vertices) < len(visited):
-        
+    while(PQ):
+        current = min(PQ, key=PQ.get)
+        del PQ[current]
+        visited.add(current)
 
-djikstra(G, 'A')
+        for neighbour in G[current].keys():
+            if neighbour not in visited:
+                old_cost = cost[neighbour]
+                cost, prev = relax(current, neighbour, G, cost, prev)
+
+                if old_cost > cost[neighbour]:
+                    PQ[neighbour] = cost[neighbour]
+
+    return cost, prev
+
+def construct_path(previous, vertex):
+    path = [vertex]
+    print(previous)
+    while previous[vertex] != None:
+        path.append(previous[vertex])
+        vertex = previous[vertex]
+
+    return "->".join(path[::-1])
+
+start = 'A'
+cost, prev = djikstra(G, start)
+for _ in G.keys():
+    print(f"Shortest path form {start} to {_} is {construct_path(prev, _)}|cost:{cost[_]}")
