@@ -1,300 +1,178 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <string>
 #include <queue>
+#include <string>
 
-class Node
+using namespace std;
+
+struct Node
 {
-public:
-    unsigned char data;
-    int frequency;
+    unsigned char ch;
+    int freq;
     Node *left, *right;
 
-    Node(unsigned char data, int frequency) : data(data), frequency(frequency), left(nullptr), right(nullptr) {}
+    Node(unsigned char c, int f): ch(c), freq(f)
+    {left = right = nullptr;}
 
-    Node(Node *left, Node *right) : data(0), frequency(left->frequency + right->frequency), left(left), right(right) {}
+    Node(Node *l, Node *r): ch(0), left(l), right(r)
+    {freq = l->freq + r->freq;}
 };
 
-class Compare
+struct compareFreq
 {
-public:
     bool operator()(Node *a, Node *b)
     {
-        return a->frequency > b->frequency;
+        return a->freq > b->freq;
     }
 };
 
-void generateCode(Node *root, std::string code, std::string codes[256])
+void buildCodes(Node *node, string path, string codes[256])
 {
-    if (root == nullptr)
+    if (!node)
         return;
 
-    if (root->left == nullptr && root->right == nullptr)
+    if (!node->left && !node->right)
     {
-        codes[root->data] = code;
+        codes[node->ch] = path;
         return;
     }
 
-    generateCode(root->left, code + "0", codes);
-    generateCode(root->right, code + "1", codes);
+    buildCodes(node->left, path + "0", codes);
+    buildCodes(node->right, path + "1", codes);
 }
 
-std::vector<unsigned char> packBits(const std::string& encoded, unsigned char& padding )
+Node *buildTree(int freq[256])
 {
-    std::vector<unsigned char> result;
+    priority_queue<Node *, vector<Node *>, compareFreq> pq;
 
-    unsigned char buffer = 0;
-    int bitCount = 0;
-
-    for (char bit : encoded)
-    {
-        buffer <<= 1;
-
-        if (bit == '1')
-        {
-            buffer |= 1;
-        }
-
-        bitCount++;
-
-        if (bitCount == 8)
-        {
-            result.push_back(buffer);
-
-            buffer = 0;
-            bitCount = 0;
-        }
-    }
-
-    if (bitCount > 0)
-    {
-        padding = 8 - bitCount;
-
-        buffer <<= padding;
-
-        result.push_back(buffer);
-    }
-    else
-    {
-        padding = 0;
-    }
-
-    return result;
-}
-
-void compress(std::string src, std::string dst)
-{
-    std::ifstream file(src, std::ios::binary);
-    std::vector<unsigned char> data;
-    char byte;
-
-    while (file.get(byte))
-    {
-        data.push_back(static_cast<unsigned char>(byte));
-    }
-    int frequency[256] = {0};
-
-    for (auto i : data)
-    {
-        frequency[i]++;
-    }
-
-    std::priority_queue<Node *, std::vector<Node *>, Compare> pq;
     for (int i = 0; i < 256; i++)
     {
-        if (frequency[i] != 0)
-        {
-            Node *node = new Node(i, frequency[i]);
-            pq.push(node);
-        }
+        if (freq[i] > 0)
+            pq.push(new Node((unsigned char)i, freq[i]));
     }
+
     if (pq.empty())
-    {
-        std::cout << "File is empty";
-        return;
-    }
+        return nullptr;
+
     while (pq.size() > 1)
     {
-        Node *left = pq.top();
+        Node *a = pq.top();
         pq.pop();
-        Node *right = pq.top();
+        Node *b = pq.top();
         pq.pop();
-
-        Node *Parent = new Node(left, right);
-        pq.push(Parent);
+        pq.push(new Node(a, b));
     }
 
-    Node *root = pq.top();
-    std::string codes[256];
-    generateCode(root, "", codes);
-    std::string encoded;
-
-    for (unsigned char byte : data)
-    {
-        encoded += codes[byte];
-    }
-
-    unsigned char padding;
-    std::vector<unsigned char> compressed = packBits(encoded, padding);
-    std::ofstream output(dst, std::ios::binary);
-    output.write("HUF1", 4);
-    output.write( reinterpret_cast<char*>(&padding), sizeof(padding));
-    output.write( reinterpret_cast<char*>(frequency), sizeof(frequency));
-    output.write( reinterpret_cast<char*>(compressed.data()), compressed.size());
-
-    output.close();
-
-
-    std::cout << "Compression successful!\n";
-    std::cout << "Original size: " << data.size() << " bytes\n";
-    std::cout << "Compressed size: " << compressed.size() << " bytes\n";
+    return pq.top();
 }
 
-void decompress(std::string src, std::string dst)
+void compress(string src, string dst)
 {
-    std::ifstream file(src, std::ios::binary);
-    char magic[4];
-
-    file.read(magic, 4);
-
-    if (std::string(magic, 4) != "HUF1")
+    ifstream in(src, ios::binary);
+    vector<unsigned char> bytes;
+    char c;
+    while (in.get(c))
     {
-        std::cerr << "Invalid Huffman file\n";
+        bytes.push_back((unsigned char)c);
+    }
+    int freq[256] = {0};
+    for (unsigned char b : bytes)
+    {
+        freq[b]++;
+    }
+
+    Node *root = buildTree(freq);
+
+    if (!root)
+    {
+        cout << "Empty file\n";
         return;
     }
 
-    unsigned char padding;
-    file.read(reinterpret_cast<char*>(&padding),sizeof(padding));
-
-    int frequency[256];
-    file.read(reinterpret_cast<char*>(frequency), sizeof(frequency));
-
-    std::priority_queue<Node*, std::vector<Node*>, Compare> pq;
-    for (int i = 0; i < 256; i++)
+    ofstream out(dst, ios::binary);
+    string codes[256];
+    buildCodes(root, "", codes);
+    out.write((char *)freq, sizeof(freq));
+    for (unsigned char b : bytes)
     {
-        if (frequency[i] > 0)
-        {
-            Node* node = new Node(
-                static_cast<unsigned char>(i),
-                frequency[i]
-            );
-
-            pq.push(node);
-        }
+        out.write(codes[b].c_str(), codes[b].length());
     }
-    while (pq.size() > 1)
-    {
-        Node* left = pq.top();
-        pq.pop();
-
-        Node* right = pq.top();
-        pq.pop();
-
-        Node* parent = new Node(left, right);
-
-        pq.push(parent);
-    }
-
-    Node* root = pq.top();
-
-    std::vector<unsigned char> compressed;
-    char byte;
-    while (file.get(byte))
-    {
-        compressed.push_back(
-            static_cast<unsigned char>(byte)
-        );
-    }
-
-    file.close();
-    std::ofstream output(dst, std::ios::binary);
-
-    if (root->left == nullptr &&
-        root->right == nullptr)
-    {
-        for (int i = 0; i < frequency[root->data]; i++)
-        {
-            output.put(
-                static_cast<char>(root->data)
-            );
-        }
-
-        output.close();
-
-        std::cout << "Decompression successful!\n";
-
-        return;
-    }
-    Node* current = root;
-
-    int totalBytes = 0;
-
-    for (unsigned char byte : compressed)
-    {
-        for (int bit = 7; bit >= 0; bit--)
-        {
-            // Ignore padding bits at the end
-            if (
-                &byte == &compressed.back() &&
-                bit < padding
-            )
-            {
-                break;
-            }
-
-            int value = (byte >> bit) & 1;
-
-            if (value == 0)
-                current = current->left;
-            else
-                current = current->right;
-
-
-            // Reached a character
-            if (current->left == nullptr &&
-                current->right == nullptr)
-            {
-                output.put(
-                    static_cast<char>(current->data)
-                );
-
-                totalBytes++;
-
-                current = root;
-            }
-        }
-    }
-
-    output.close();
-
-    std::cout << "Decompression successful!\n";
-    std::cout << "Original size: " << totalBytes << " bytes\n";
+    cout << "Compressed "<< bytes.size()<< " bytes\n";
 }
 
+void decompress(string src, string dst)
+{
+    ifstream in(src, ios::binary);
+    if (!in)
+    {
+        cout << "Can't open " << src << "\n";
+        return;
+    }
+
+    int freq[256];
+    in.read((char *)freq, sizeof(freq));
+    Node *root = buildTree(freq);
+    if (!root)
+    {
+        ofstream out(dst, ios::binary);
+        cout << "Decompressed empty file\n";
+        return;
+    }
+
+    ofstream out(dst, ios::binary);
+    if (!root->left && !root->right)
+    {
+        for (int i = 0; i < freq[root->ch]; i++)
+        {
+            out.put((char)root->ch);
+        }
+
+        cout << "Decompressed " << freq[root->ch] << " bytes\n";
+        return;
+    }
+
+    Node *cur = root;
+    char bit;
+    int written = 0;
+
+    while (in.get(bit))
+    {
+        if (bit == '0')
+            cur = cur->left;
+        else if (bit == '1')
+            cur = cur->right;
+        else
+            continue;
+
+        if (!cur->left && !cur->right)
+        {
+            out.put((char)cur->ch);
+            written++;
+            cur = root;
+        }
+    }
+
+    cout << "Decompressed " << written << " bytes\n";
+}
 
 int main(int argc, char *argv[])
 {
     if (argc != 4)
     {
-        std::cout << "Usage:" << std::endl;
-        std::cout << "./huffman <-c|-d> <src> <dst>" << std::endl;
+        cout << "Usage: ./huffman <-c/-d> <src> <dst>\n";
         return 1;
     }
 
-    std::string op = argv[1];
-    std::string src = argv[2];
-    std::string dst = argv[3];
+    string mode = argv[1];
+    string src = argv[2];
+    string dst = argv[3];
 
-    if (op == "-c" || op == "-C")
+    if (mode == "-c" || mode == "-C")
         compress(src, dst);
-
-    else if (op == "-d" || op == "-D")
+    else if (mode == "-d" || mode == "-D")
         decompress(src, dst);
-
     else
-    {
-        std::cout << "Invalid Operation";
-        return 1;
-    }
+        cout << "Unknown mode. Use -c or -d\n";
+    return 0;
 }
