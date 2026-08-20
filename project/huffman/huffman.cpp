@@ -94,11 +94,34 @@ void compress(string src, string dst)
     string codes[256];
     buildCodes(root, "", codes);
     out.write((char *)freq, sizeof(freq));
+
+    unsigned char buffer = 0;
+    int bitsFilled = 0;
+
     for (unsigned char b : bytes)
     {
-        out.write(codes[b].c_str(), codes[b].length());
+        for (char bitChar : codes[b])
+        {
+            buffer = (buffer << 1) | (bitChar - '0');
+            bitsFilled++;
+
+            if (bitsFilled == 8)
+            {
+                out.put((char)buffer);
+                buffer = 0;
+                bitsFilled = 0;
+            }
+        }
     }
-    cout << "Compressed "<< bytes.size()<< " bytes\n";
+
+    // flush leftover bits, padded with 0s
+    if (bitsFilled > 0)
+    {
+        buffer <<= (8 - bitsFilled);
+        out.put((char)buffer);
+    }
+
+    cout << "Compressed " << bytes.size() << " bytes\n";
 }
 
 void decompress(string src, string dst)
@@ -112,38 +135,49 @@ void decompress(string src, string dst)
 
     int freq[256];
     in.read((char *)freq, sizeof(freq));
+
+    long totalSymbols = 0;
+    for (int i = 0; i < 256; i++)
+        totalSymbols += freq[i];
+
     Node *root = buildTree(freq);
+    ofstream out(dst, ios::binary);
+
     if (!root)
     {
-        ofstream out(dst, ios::binary);
         cout << "Decompressed empty file\n";
         return;
     }
 
-    ofstream out(dst, ios::binary);
     if (!root->left && !root->right)
     {
         for (int i = 0; i < freq[root->ch]; i++)
-        {
             out.put((char)root->ch);
-        }
 
         cout << "Decompressed " << freq[root->ch] << " bytes\n";
         return;
     }
 
     Node *cur = root;
-    char bit;
-    int written = 0;
+    long written = 0;
+    unsigned char buffer = 0;
+    int bitsLeft = 0;
 
-    while (in.get(bit))
+    while (written < totalSymbols)
     {
-        if (bit == '0')
-            cur = cur->left;
-        else if (bit == '1')
-            cur = cur->right;
-        else
-            continue;
+        if (bitsLeft == 0)
+        {
+            char c;
+            if (!in.get(c))
+                break; // truncated file
+            buffer = (unsigned char)c;
+            bitsLeft = 8;
+        }
+
+        bitsLeft--;
+        int bit = (buffer >> bitsLeft) & 1;
+
+        cur = (bit == 0) ? cur->left : cur->right;
 
         if (!cur->left && !cur->right)
         {
